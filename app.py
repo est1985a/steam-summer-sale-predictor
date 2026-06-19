@@ -318,5 +318,5 @@ if st.session_state.prediction_result:
 st.divider()
 
 st.caption(
-    "Built for GCI 2026 Summer — predictions based on a Random Forest model trained on 5,065 Steam games with multi-year Summer Sale history."
+    "Predictions based on a RandomForest model trained on 5,065 Steam games with multi-year Summer Sale history."
 )
