@@ -71,17 +71,45 @@ def get_review_data(appid):
     return round((total_positive / total) * 100, 1)
 
 
-def get_recent_summer_sales(appid, years_back=3):
-    """Get actual Summer Sale discounts from the last N years, if available"""
+def get_itad_id(appid):
+    """Look up a game's internal ITAD id from its Steam appid"""
+    lookup_url = f"https://api.isthereanydeal.com/games/lookup/v1?key={ITAD_API_KEY}&appid={appid}"
+    lookup_response = requests.get(lookup_url, timeout=10)
+    lookup_data = lookup_response.json()
+    if not lookup_data.get('found'):
+        return None
+    return lookup_data['game']['id']
+
+
+def get_steam_historical_low(itad_id):
+    """Get the all-time historical low price specifically on Steam for this game"""
     try:
-        lookup_url = f"https://api.isthereanydeal.com/games/lookup/v1?key={ITAD_API_KEY}&appid={appid}"
-        lookup_response = requests.get(lookup_url, timeout=10)
-        lookup_data = lookup_response.json()
+        prices_url = f"https://api.isthereanydeal.com/games/prices/v3?key={ITAD_API_KEY}&country=US"
+        prices_response = requests.post(prices_url, json=[itad_id], timeout=10)
+        prices_data = prices_response.json()
 
-        if not lookup_data.get('found'):
-            return []
+        if not prices_data:
+            return None
 
-        itad_id = lookup_data['game']['id']
+        game_data = prices_data[0]
+
+        for deal in game_data.get('deals', []):
+            if deal['shop']['id'] == 61:  # Steam
+                store_low = deal.get('storeLow', {})
+                return store_low.get('amount')
+
+        return None
+    except Exception:
+        return None
+
+
+def get_recent_summer_sales(appid, years_back=5):
+    """Get actual Summer Sale discounts from the last N years, plus all-time Steam low, if available"""
+    try:
+        itad_id = get_itad_id(appid)
+        if itad_id is None:
+            return [], None
+
         since_date = (datetime.datetime.now() - datetime.timedelta(days=365*years_back)).strftime('%Y-%m-%dT00:00:00Z')
 
         history_url = f"https://api.isthereanydeal.com/games/history/v2?key={ITAD_API_KEY}&id={itad_id}&country=US&since={since_date}"
@@ -102,9 +130,12 @@ def get_recent_summer_sales(appid, years_back=3):
                 if year not in yearly_discounts or cut > yearly_discounts[year]:
                     yearly_discounts[year] = cut
 
-        return sorted(yearly_discounts.items(), reverse=True)[:years_back]
+        sale_history = sorted(yearly_discounts.items(), reverse=True)[:years_back]
+        historical_low = get_steam_historical_low(itad_id)
+
+        return sale_history, historical_low
     except Exception:
-        return []
+        return [], None
 
 
 def predict_discount(appid):
@@ -196,6 +227,9 @@ if "prediction_error" not in st.session_state:
 if "history" not in st.session_state:
     st.session_state.history = None
 
+if "historical_low" not in st.session_state:
+    st.session_state.historical_low = None
+
 # ── UI ───────────────────────────────────────────────────────────────────────
 game_name = st.text_input(
     "Game title",
@@ -210,6 +244,7 @@ if st.button("Predict discount", type="primary") and game_name:
     st.session_state.prediction_result = None
     st.session_state.prediction_error = None
     st.session_state.history = None
+    st.session_state.historical_low = None
 
 
 if st.session_state.search_results:
@@ -242,9 +277,13 @@ if st.session_state.search_results:
 
             with st.spinner("Checking historical sale data..."):
 
-                st.session_state.history = get_recent_summer_sales(
-                    st.session_state.selected_appid
+                history, historical_low = get_recent_summer_sales(
+                    st.session_state.selected_appid,
+                    years_back=5
                 )
+
+                st.session_state.history = history
+                st.session_state.historical_low = historical_low
 
 
 if st.session_state.prediction_error:
@@ -305,13 +344,24 @@ if st.session_state.prediction_result:
         )
 
         st.caption(
-            "This shows the deepest Steam discount found in June/July for each of the last 3 years, where available."
+            "This shows the deepest Steam discount found in June/July for each of the last 5 years, where available."
         )
 
     else:
 
         st.info(
             "No historical Summer Sale data found for this game — it may be new or rarely discounted."
+        )
+
+    if st.session_state.historical_low is not None:
+
+        st.metric(
+            "All-time lowest price on Steam",
+            f"${st.session_state.historical_low:.2f}"
+        )
+
+        st.caption(
+            "The lowest price this game has ever been sold for on Steam, across any sale event (not just Summer Sale)."
         )
 
 
