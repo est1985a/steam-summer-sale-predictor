@@ -9,7 +9,7 @@ import joblib
 st.set_page_config(page_title="Steam Summer Sale Predictor", page_icon="🎮", layout="centered")
 
 st.title("🎮 Steam Summer Sale Discount Predictor")
-st.write("Enter a Steam game title to predict its expected discount for the next Summer Sale.")
+
 
 # ── Load model and data (cached so it only loads once) ─────────────────────────
 @st.cache_resource
@@ -296,6 +296,8 @@ elif status == 'upcoming':
     st.info(f"⏳ The Steam Summer Sale starts in {days} days — use this tool to decide what to wishlist!")
 else:
     st.info(f"📅 The Steam Summer Sale has ended. Next sale expected in approximately {days} days.")
+
+st.write("Enter a Steam game title to predict its expected discount for the next Summer Sale.")
 
 game_name = st.text_input(
     "Game title",
