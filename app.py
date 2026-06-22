@@ -487,11 +487,6 @@ with st.expander("ℹ️ How does this work?"):
     - Games releasing after the model's training data was collected
     - Whether Valve runs a Summer Sale in a given year (though they have every year since 2010)
     - Flash sales or publisher-specific promotions outside the Summer Sale window
-    
-    ### Built by
-    This project was built as part of the **GCI 2026 Summer course** at the 
-    University of Tokyo's Matsuo & Iwasawa Lab, combining data from the 
-    Steam Web API and IsThereAnyDeal API.
     """)
 
 st.caption(
