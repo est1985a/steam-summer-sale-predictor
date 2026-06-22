@@ -422,6 +422,78 @@ if st.session_state.prediction_result:
 
 st.divider()
 
+with st.expander("ℹ️ How does this work?"):
+    st.markdown("""
+    ### About this tool
+    This app uses a **Random Forest machine learning model** trained on data from 
+    5,065 Steam games to predict how deeply a game might be discounted during the 
+    Steam Summer Sale (typically held in late June / early July each year).
+    
+    ### How the prediction is made
+    When you search for a game, the app fetches live data from Steam's API and 
+    feeds it into the model. The model was trained on historical Summer Sale 
+    discount data collected via the IsThereAnyDeal API, averaged across up to 
+    5 years of Summer Sales per game.
+    
+    ### Features used to make the prediction
+    The model considers the following signals:
+    
+    | Feature | Why it matters |
+    |---|---|
+    | **Game age** | Older games tend to be discounted more deeply |
+    | **Publisher size** | Larger publishers have more predictable discount patterns |
+    | **Review sentiment** | How positively reviewed the game is |
+    | **Base price** | Higher priced games often have deeper % discounts |
+    | **Number of reviews** | A proxy for overall popularity |
+    | **Metacritic score** | Critical reception |
+    | **Achievements** | A signal of game depth and engagement |
+    | **DLC count** | Games with more DLC tend to discount the base game more |
+    | **Genre** | Action, RPG, Casual, and Early Access games show different patterns |
+    
+    ### Model performance
+    The model predicts Summer Sale discounts with a **mean absolute error of ~10%** 
+    and explains around **61% of the variation** in discount depth across games (R² = 0.611).
+    
+    **What does that actually mean?**
+    
+    Imagine you asked 100 people to guess a game's Summer Sale discount just by looking 
+    at the box — they'd probably be wildly off. Now imagine you gave them a detailed 
+    history of every Steam sale ever, the game's review scores, its publisher's track 
+    record, and how old the game is. They'd do much better.
+    
+    That's what this model does — it's learned patterns from 5,065 games and their 
+    real Summer Sale history.
+    
+    - **Mean absolute error of ~10%** means that on average, if the model predicts 
+    a 60% discount, the real discount typically falls somewhere between 50–70%. 
+    Not perfect, but a useful ballpark.
+    
+    - **R² of 0.611** means the model can explain about 61% of why discounts vary 
+    between games using the features above. The remaining 39% comes down to things 
+    we can't measure — publisher business decisions, marketing budgets, internal 
+    Valve negotiations, and plain randomness.
+    
+    Think of it like a weather forecast — it won't be exactly right every time, 
+    but it's much more useful than just guessing.
+    
+    ### Prices
+    All prices are shown in **USD** using Steam's US store pricing. 
+    Steam uses regional pricing, so actual prices in your local currency may differ. 
+    If you're in Japan or another region, the Steam page link will automatically 
+    show your local price.
+    
+    ### What this tool can't predict
+    - Publisher-specific business decisions or marketing strategies
+    - Games releasing after the model's training data was collected
+    - Whether Valve runs a Summer Sale in a given year (though they have every year since 2010)
+    - Flash sales or publisher-specific promotions outside the Summer Sale window
+    
+    ### Built by
+    This project was built as part of the **GCI 2026 Summer course** at the 
+    University of Tokyo's Matsuo & Iwasawa Lab, combining data from the 
+    Steam Web API and IsThereAnyDeal API.
+    """)
+
 st.caption(
     "Predictions based on a RandomForest model trained on 5,065 Steam games with multi-year Summer Sale history."
 )
