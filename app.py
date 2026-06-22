@@ -517,6 +517,3 @@ with st.expander("ℹ️ How does this work?"):
     - Flash sales or publisher-specific promotions outside the Summer Sale window
     """)
 
-st.caption(
-    "Predictions based on a RandomForest model trained on 5,065 Steam games with multi-year Summer Sale history."
-)
