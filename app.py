@@ -164,6 +164,7 @@ def predict_discount(appid):
 
     price_data = metadata.get('price_overview', {})
     price = price_data.get('final', 0) / 100
+    current_discount = price_data.get('discount_percent', 0) 
     log_price = np.log1p(price)
 
     num_reviews_total = metadata.get('recommendations', {}).get('total', 0)
@@ -206,11 +207,47 @@ def predict_discount(appid):
         'name': metadata['name'],
         'predicted_discount': round(prediction, 1),
         'price': price,
+        'current_discount': current_discount,
         'publisher': publisher,
         'game_age_years': round(game_age_years, 1),
         'header_image': metadata.get('header_image')
     }
     return result, None
+
+def buy_recommendation(predicted_discount, current_discount, price):
+    """Generate a buy now or wait recommendation"""
+    
+    saving = price * (predicted_discount / 100)
+    discounted_price = price * (1 - predicted_discount / 100)
+    
+    # Game is already on sale
+    if current_discount > 0:
+        current_saving = price * (current_discount / 100)
+        return {
+            'verdict': '🛒 Buy Now',
+            'colour': 'green',
+            'reason': f"This game is already {current_discount}% off (saving ${current_saving:.2f}). Don't wait — sale prices don't always come back immediately."
+        }
+    
+    # Not on sale — predict future discount
+    if predicted_discount < 20:
+        return {
+            'verdict': '🤷 Your call',
+            'colour': 'orange',
+            'reason': f"We predict only a small discount ({predicted_discount}%). Probably not worth waiting unless you're in no rush."
+        }
+    elif predicted_discount < 40:
+        return {
+            'verdict': '⏳ Consider Waiting',
+            'colour': 'orange',
+            'reason': f"A moderate discount of around {predicted_discount}% is likely, saving you around ${saving:.2f} (bringing it down to ~${discounted_price:.2f})."
+        }
+    else:
+        return {
+            'verdict': '⏰ Wait for the Sale',
+            'colour': 'green',
+            'reason': f"A significant discount of around {predicted_discount}% is predicted, saving you around ${saving:.2f} (bringing it down to ~${discounted_price:.2f})."
+        }
 
 if "search_results" not in st.session_state:
     st.session_state.search_results = None
@@ -313,6 +350,16 @@ if st.session_state.prediction_result:
             "Predicted Summer Sale Discount",
             f"{result['predicted_discount']}%"
         )
+        
+        # Buy recommendation
+        rec = buy_recommendation(
+        result['predicted_discount'],
+        result['current_discount'],
+        result['price']
+        )
+
+        st.markdown(f"### {rec['verdict']}")
+        st.info(rec['reason']) if rec['colour'] == 'orange' else st.success(rec['reason'])
 
         st.write(
             f"**Current price:** ${result['price']:.2f}"
