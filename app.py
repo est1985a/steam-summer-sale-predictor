@@ -213,6 +213,7 @@ def predict_discount(appid):
         'publisher': publisher,
         'game_age_years': round(game_age_years, 1),
         'header_image': metadata.get('header_image')
+        'appid': appid
     }
     return result, None
 
@@ -352,6 +353,8 @@ if st.session_state.prediction_result:
             "Predicted Summer Sale Discount",
             f"{result['predicted_discount']}%"
         )
+        steam_url = f"https://store.steampowered.com/app/{result['appid']}/"
+        st.markdown(f"[🔗 View on Steam]({steam_url})")
         
         # Buy recommendation
         rec = buy_recommendation(
