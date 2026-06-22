@@ -164,6 +164,7 @@ def predict_discount(appid):
 
     price_data = metadata.get('price_overview', {})
     price = price_data.get('initial', 0) / 100
+    current_price = price_data.get('final', 0) / 100
     current_discount = price_data.get('discount_percent', 0) 
     log_price = np.log1p(price)
 
@@ -207,6 +208,7 @@ def predict_discount(appid):
         'name': metadata['name'],
         'predicted_discount': round(prediction, 1),
         'price': price,
+        'current_price': current_price, 
         'current_discount': current_discount,
         'publisher': publisher,
         'game_age_years': round(game_age_years, 1),
