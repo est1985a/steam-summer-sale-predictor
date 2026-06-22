@@ -252,6 +252,22 @@ def buy_recommendation(predicted_discount, current_discount, price):
             'reason': f"A significant discount of around {predicted_discount}% is predicted, saving you around ${saving:.2f} (bringing it down to ~${discounted_price:.2f})."
         }
 
+def get_sale_status():
+    """Return current Steam Summer Sale status"""
+    today = datetime.date.today()
+    sale_start = datetime.date(2026, 6, 25)
+    sale_end = datetime.date(2026, 7, 10)  # approximate end date
+    next_sale = datetime.date(2027, 6, 26)  # approximate next year
+
+    if sale_start <= today <= sale_end:
+        days_left = (sale_end - today).days
+        return 'active', days_left
+    elif today < sale_start:
+        days_until = (sale_start - today).days
+        return 'upcoming', days_until
+    else:
+        days_until = (next_sale - today).days
+        return 'ended', days_until
 if "search_results" not in st.session_state:
     st.session_state.search_results = None
 
@@ -271,6 +287,16 @@ if "historical_low" not in st.session_state:
     st.session_state.historical_low = None
 
 # ── UI ───────────────────────────────────────────────────────────────────────
+# Sale status banner
+status, days = get_sale_status()
+
+if status == 'active':
+    st.success(f"🎉 The Steam Summer Sale is on right now! {days} days left — great time to check for deals.")
+elif status == 'upcoming':
+    st.info(f"⏳ The Steam Summer Sale starts in {days} days — use this tool to decide what to wishlist!")
+else:
+    st.info(f"📅 The Steam Summer Sale has ended. Next sale expected in approximately {days} days.")
+
 game_name = st.text_input(
     "Game title",
     placeholder="e.g. Hollow Knight"
