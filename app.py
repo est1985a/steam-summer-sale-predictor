@@ -229,7 +229,7 @@ def buy_recommendation(predicted_discount, current_discount, price):
         return {
             'verdict': '🛒 Buy Now',
             'colour': 'green',
-            'reason': f"This game is already {current_discount}% off (saving ${current_saving:.2f}). Don't wait — sale prices don't always come back immediately."
+            'reason': f"This game is already {current_discount}% off (saving \${current_saving:.2f}). Don't wait — sale prices don't always come back immediately."
         }
     
     # Not on sale — predict future discount
@@ -243,13 +243,13 @@ def buy_recommendation(predicted_discount, current_discount, price):
         return {
             'verdict': '⏳ Consider Waiting',
             'colour': 'orange',
-            'reason': f"A moderate discount of around {predicted_discount}% is likely, saving you around ${saving:.2f} (bringing it down to ~${discounted_price:.2f})."
+            'reason': f"A moderate discount of around {predicted_discount}% is likely, saving you around \${saving:.2f} (bringing it down to ~\${discounted_price:.2f})."
         }
     else:
         return {
             'verdict': '⏰ Wait for the Sale',
             'colour': 'green',
-            'reason': f"A significant discount of around {predicted_discount}% is predicted, saving you around ${saving:.2f} (bringing it down to ~${discounted_price:.2f})."
+            'reason': f"A significant discount of around {predicted_discount}% is predicted, saving you around \${saving:.2f} (bringing it down to ~\${discounted_price:.2f})."
         }
 
 def get_sale_status():
