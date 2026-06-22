@@ -367,7 +367,7 @@ if st.session_state.prediction_result:
             st.success(rec['reason'])
 
         st.write(
-            f"**Current price:** ${result['price']:.2f}"
+            f"**Current price:** ${result['current_price']:.2f}"
         )
 
         st.write(
