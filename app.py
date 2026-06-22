@@ -163,7 +163,7 @@ def predict_discount(appid):
     log_achievements = np.log1p(achievements_total)
 
     price_data = metadata.get('price_overview', {})
-    price = price_data.get('final', 0) / 100
+    price = price_data.get('initial', 0) / 100
     current_discount = price_data.get('discount_percent', 0) 
     log_price = np.log1p(price)
 
