@@ -212,7 +212,7 @@ def predict_discount(appid):
         'current_discount': current_discount,
         'publisher': publisher,
         'game_age_years': round(game_age_years, 1),
-        'header_image': metadata.get('header_image')
+        'header_image': metadata.get('header_image'),
         'appid': appid
     }
     return result, None
