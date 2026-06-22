@@ -291,9 +291,9 @@ if "historical_low" not in st.session_state:
 status, days = get_sale_status()
 
 if status == 'active':
-    st.success(f"🎉 The Steam Summer Sale is on right now! {days} days left — great time to check for deals.")
+    st.success(f"🎉 The Steam Summer Sale is on right now!(June 25 ~ July 9) {days} days left — great time to check for deals.")
 elif status == 'upcoming':
-    st.info(f"⏳ The Steam Summer Sale starts in {days} days — use this tool to decide what to wishlist!")
+    st.info(f"⏳ The Steam Summer Sale starts in {days} days (June 25 ~ July 9) — use this tool to decide what to wishlist!")
 else:
     st.info(f"📅 The Steam Summer Sale has ended. Next sale expected in approximately {days} days.")
 
