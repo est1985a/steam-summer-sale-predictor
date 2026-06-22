@@ -359,7 +359,10 @@ if st.session_state.prediction_result:
         )
 
         st.markdown(f"### {rec['verdict']}")
-        st.info(rec['reason']) if rec['colour'] == 'orange' else st.success(rec['reason'])
+        if rec['colour'] == 'orange':
+            st.info(rec['reason'])
+        else:
+            st.success(rec['reason'])
 
         st.write(
             f"**Current price:** ${result['price']:.2f}"
