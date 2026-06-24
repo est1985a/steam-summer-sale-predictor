@@ -572,8 +572,10 @@ with st.expander("ℹ️ How does this work?"):
     - Flash sales or publisher-specific promotions outside the Summer Sale window
     
     ### Built by
-    This project was built as part of the **GCI 2026 Summer course** at the 
-    University of Tokyo's Matsuo & Iwasawa Lab, combining data from the 
+    This project was built as a side project. I'm a student at the 
+    University of Tokyo's Matsuo & Iwasawa Lab, and this was built as way of finding new ML techniques. It combinines data from the 
     Steam Web API and IsThereAnyDeal API.
+
+    Check my Github if you are interested: https://github.com/est1985a/steam-summer-sale-predictor
     """)
 
