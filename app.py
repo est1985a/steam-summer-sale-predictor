@@ -31,30 +31,30 @@ df_steam_on_sale = df_steam[df_steam['summer_sale_discount'] > 0]
 ITAD_API_KEY = st.secrets["ITAD_API_KEY"]
 
 FEATURES = [
-    'publisher_avg_discount',
-    'game_age_years',
+    'metacritic_score',
     'pct_pos_total',
-    'log_num_reviews_total',
-    'genre_early_access',
-    'log_achievements',
-    'log_price',
     'log_peak_ccu',
-    'log_publisher_frequency',
+    'log_achievements',
     'log_average_playtime_forever',
     'log_dlc_count',
-    'metacritic_score',
-    'tag_singleplayer',
-    'tag_first_person',
-    'tag_action',
-    'tag_anime',
-    'genre_indie',
+    'log_num_reviews_total',
+    'log_price',
     'genre_action',
-    'tag_casual',
     'genre_adventure',
+    'genre_early_access',
+    'genre_indie',
+    'tag_singleplayer',
+    'tag_indie',
+    'tag_action',
+    'tag_casual',
+    'tag_2d',
     'tag_atmospheric',
+    'tag_first_person',
+    'tag_anime',
     'tag_difficult',
-    'tag_pixel_graphics',
-    'genre_casual'
+    'log_publisher_frequency',
+    'game_age_years',
+    'publisher_avg_discount'
 ]
 
 # ── Helper functions ─────────────────────────────────────────────────────────
@@ -203,7 +203,6 @@ def predict_discount(appid):
 
     genres = [g['description'] for g in metadata.get('genres', [])]
     genre_early_access = 1 if 'Early Access' in genres else 0
-    genre_casual = 1 if 'Casual' in genres else 0
     genre_action = 1 if 'Action' in genres else 0
     genre_indie = 1 if 'Indie' in genres else 0
     genre_adventure = 1 if 'Adventure' in genres else 0
@@ -211,32 +210,32 @@ def predict_discount(appid):
     log_peak_ccu = df_steam_on_sale['log_peak_ccu'].median()
     log_average_playtime_forever = df_steam_on_sale['log_average_playtime_forever'].median()
 
-    # Tag defaults — set to 0 since we can't get tags from Steam API
+    # Tag defaults — set to 0 since tags aren't available from Steam API
     features = pd.DataFrame([{
-        'publisher_avg_discount': publisher_avg_discount,
-        'game_age_years': game_age_years,
+        'metacritic_score': metacritic_score,
         'pct_pos_total': pct_pos_total,
-        'log_num_reviews_total': log_num_reviews_total,
-        'genre_early_access': genre_early_access,
-        'log_achievements': log_achievements,
-        'log_price': log_price,
         'log_peak_ccu': log_peak_ccu,
-        'log_publisher_frequency': log_publisher_frequency,
+        'log_achievements': log_achievements,
         'log_average_playtime_forever': log_average_playtime_forever,
         'log_dlc_count': log_dlc_count,
-        'metacritic_score': metacritic_score,
-        'tag_singleplayer': 0,
-        'tag_first_person': 0,
-        'tag_action': 0,
-        'tag_anime': 0,
-        'genre_indie': genre_indie,
+        'log_num_reviews_total': log_num_reviews_total,
+        'log_price': log_price,
         'genre_action': genre_action,
-        'tag_casual': 0,
         'genre_adventure': genre_adventure,
+        'genre_early_access': genre_early_access,
+        'genre_indie': genre_indie,
+        'tag_singleplayer': 0,
+        'tag_indie': 0,
+        'tag_action': 0,
+        'tag_casual': 0,
+        'tag_2d': 0,
         'tag_atmospheric': 0,
+        'tag_first_person': 0,
+        'tag_anime': 0,
         'tag_difficult': 0,
-        'tag_pixel_graphics': 0,
-        'genre_casual': genre_casual
+        'log_publisher_frequency': log_publisher_frequency,
+        'game_age_years': game_age_years,
+        'publisher_avg_discount': publisher_avg_discount
     }])[FEATURES]
 
     prediction = model.predict(features)[0]
