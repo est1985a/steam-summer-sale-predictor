@@ -240,11 +240,16 @@ def predict_discount(appid):
 
     prediction = model.predict(features)[0]
 
+    # Round to nearest 5% (how Steam actually sets discounts) and enforce 10-90% bounds
+    prediction_rounded = round(prediction / 5) * 5
+    prediction_rounded = max(10, min(90, prediction_rounded))
+
     result = {
         'name': metadata['name'],
-        'predicted_discount': round(prediction, 1),
+        'predicted_discount': prediction_rounded,
+        'predicted_discount_exact': round(prediction, 1),
         'price': price,
-        'current_price': current_price, 
+        'current_price': current_price,
         'current_discount': current_discount,
         'publisher': publisher,
         'game_age_years': round(game_age_years, 1),
@@ -417,6 +422,7 @@ if st.session_state.prediction_result:
             "Predicted Summer Sale Discount",
             f"{result['predicted_discount']}%"
         )
+        st.caption(f"Model calculated: {result['predicted_discount_exact']}% — rounded to nearest 5% as Steam discounts are set in 5% increments.")
         steam_url = f"https://store.steampowered.com/app/{result['appid']}/"
         st.markdown(f"[🔗 View on Steam]({steam_url})")
         
@@ -456,8 +462,13 @@ if st.session_state.prediction_result:
             columns=["Year", "Discount %"]
         )
 
+        # Add average row
+        avg_discount = round(hist_df["Discount %"].mean(), 1)
+        avg_row = pd.DataFrame([{"Year": "Average", "Discount %": avg_discount}])
+        hist_df_display = pd.concat([hist_df, avg_row], ignore_index=True)
+
         st.dataframe(
-            hist_df,
+            hist_df_display,
             hide_index=True,
             use_container_width=True
         )
@@ -468,9 +479,16 @@ if st.session_state.prediction_result:
 
     else:
 
-        st.info(
-            "No historical Summer Sale data found for this game — it may be new or rarely discounted."
-        )
+        # Check game age to give a more specific message
+        game_age = st.session_state.prediction_result.get('game_age_years', 0)
+        if game_age < 2:
+            st.info(
+                "⏳ This game was released less than 2 years ago and hasn't had enough Summer Sales to establish a pattern yet."
+            )
+        else:
+            st.warning(
+                "⚠️ No Summer Sale history found for this game. This publisher may not typically participate in Steam sales — treat the model's prediction with extra caution."
+            )
 
     if st.session_state.historical_low is not None:
 
