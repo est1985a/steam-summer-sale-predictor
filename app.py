@@ -14,26 +14,47 @@ st.title("🎮 Steam Summer Sale Discount Predictor")
 # ── Load model and data (cached so it only loads once) ─────────────────────────
 @st.cache_resource
 def load_model():
-    model = joblib.load("steam_model.pkl")
-    pub_freq_lookup = joblib.load("pub_freq_lookup.pkl")
-    return model, pub_freq_lookup
+    model = joblib.load("steam_model_v3.pkl")
+    pub_freq_lookup = joblib.load("pub_freq_lookup_v3.pkl")
+    pub_discount_map = joblib.load("pub_discount_map_v3.pkl")
+    return model, pub_freq_lookup, pub_discount_map
 
 @st.cache_data
 def load_training_data():
-    df = pd.read_csv("steam_summer_sale_dataset_v2.csv")
+    df = pd.read_csv("steam_summer_sale_dataset_v3.csv")
     return df
 
-model, pub_freq_lookup = load_model()
+model, pub_freq_lookup, pub_discount_map = load_model()
 df_steam = load_training_data()
+df_steam_on_sale = df_steam[df_steam['summer_sale_discount'] > 0]
 
 ITAD_API_KEY = st.secrets["ITAD_API_KEY"]
 
 FEATURES = [
-    'game_age_years', 'pct_pos_total', 'log_publisher_frequency',
-    'genre_early_access', 'log_achievements', 'log_price',
-    'log_num_reviews_total', 'metacritic_score', 'log_peak_ccu',
-    'log_average_playtime_forever', 'log_dlc_count',
-    'genre_casual', 'genre_action', 'genre_rpg'
+    'publisher_avg_discount',
+    'game_age_years',
+    'pct_pos_total',
+    'log_num_reviews_total',
+    'genre_early_access',
+    'log_achievements',
+    'log_price',
+    'log_peak_ccu',
+    'log_publisher_frequency',
+    'log_average_playtime_forever',
+    'log_dlc_count',
+    'metacritic_score',
+    'tag_singleplayer',
+    'tag_first_person',
+    'tag_action',
+    'tag_anime',
+    'genre_indie',
+    'genre_action',
+    'tag_casual',
+    'genre_adventure',
+    'tag_atmospheric',
+    'tag_difficult',
+    'tag_pixel_graphics',
+    'genre_casual'
 ]
 
 # ── Helper functions ─────────────────────────────────────────────────────────
@@ -155,9 +176,13 @@ def predict_discount(appid):
     pub_freq = pub_freq_lookup.get(publisher, 1)
     log_publisher_frequency = np.log1p(pub_freq)
 
+    # Publisher average discount — new v3 feature
+    median_pub_discount = df_steam_on_sale['summer_sale_discount'].median()
+    publisher_avg_discount = pub_discount_map.get(publisher, median_pub_discount)
+
     pct_pos_total = get_review_data(appid)
     if pct_pos_total is None:
-        pct_pos_total = df_steam['pct_pos_total'].median()
+        pct_pos_total = df_steam_on_sale['pct_pos_total'].median()
 
     achievements_total = metadata.get('achievements', {}).get('total', 0)
     log_achievements = np.log1p(achievements_total)
@@ -165,7 +190,7 @@ def predict_discount(appid):
     price_data = metadata.get('price_overview', {})
     price = price_data.get('initial', 0) / 100
     current_price = price_data.get('final', 0) / 100
-    current_discount = price_data.get('discount_percent', 0) 
+    current_discount = price_data.get('discount_percent', 0)
     log_price = np.log1p(price)
 
     num_reviews_total = metadata.get('recommendations', {}).get('total', 0)
@@ -180,26 +205,38 @@ def predict_discount(appid):
     genre_early_access = 1 if 'Early Access' in genres else 0
     genre_casual = 1 if 'Casual' in genres else 0
     genre_action = 1 if 'Action' in genres else 0
-    genre_rpg = 1 if 'RPG' in genres else 0
+    genre_indie = 1 if 'Indie' in genres else 0
+    genre_adventure = 1 if 'Adventure' in genres else 0
 
-    log_peak_ccu = df_steam['log_peak_ccu'].median()
-    log_average_playtime_forever = df_steam['log_average_playtime_forever'].median()
+    log_peak_ccu = df_steam_on_sale['log_peak_ccu'].median()
+    log_average_playtime_forever = df_steam_on_sale['log_average_playtime_forever'].median()
 
+    # Tag defaults — set to 0 since we can't get tags from Steam API
     features = pd.DataFrame([{
+        'publisher_avg_discount': publisher_avg_discount,
         'game_age_years': game_age_years,
         'pct_pos_total': pct_pos_total,
-        'log_publisher_frequency': log_publisher_frequency,
+        'log_num_reviews_total': log_num_reviews_total,
         'genre_early_access': genre_early_access,
         'log_achievements': log_achievements,
         'log_price': log_price,
-        'log_num_reviews_total': log_num_reviews_total,
-        'metacritic_score': metacritic_score,
         'log_peak_ccu': log_peak_ccu,
+        'log_publisher_frequency': log_publisher_frequency,
         'log_average_playtime_forever': log_average_playtime_forever,
         'log_dlc_count': log_dlc_count,
-        'genre_casual': genre_casual,
+        'metacritic_score': metacritic_score,
+        'tag_singleplayer': 0,
+        'tag_first_person': 0,
+        'tag_action': 0,
+        'tag_anime': 0,
+        'genre_indie': genre_indie,
         'genre_action': genre_action,
-        'genre_rpg': genre_rpg
+        'tag_casual': 0,
+        'genre_adventure': genre_adventure,
+        'tag_atmospheric': 0,
+        'tag_difficult': 0,
+        'tag_pixel_graphics': 0,
+        'genre_casual': genre_casual
     }])[FEATURES]
 
     prediction = model.predict(features)[0]
@@ -454,20 +491,21 @@ with st.expander("ℹ️ How does this work?"):
     st.markdown("""
     ### About this tool
     This app uses a **Random Forest machine learning model** trained on data from 
-    5,065 Steam games to predict how deeply a game might be discounted during the 
+    12,617 Steam games to predict how deeply a game might be discounted during the 
     Steam Summer Sale (typically held in late June / early July each year).
     
     ### How the prediction is made
     When you search for a game, the app fetches live data from Steam's API and 
     feeds it into the model. The model was trained on historical Summer Sale 
     discount data collected via the IsThereAnyDeal API, averaged across up to 
-    5 years of Summer Sales per game.
+    10 years of Summer Sales per game.
     
     ### Features used to make the prediction
     The model considers the following signals:
     
     | Feature | Why it matters |
     |---|---|
+    | **Publisher discount history** | The single strongest signal — publishers with a history of deep discounts tend to keep doing it |
     | **Game age** | Older games tend to be discounted more deeply |
     | **Publisher size** | Larger publishers have more predictable discount patterns |
     | **Review sentiment** | How positively reviewed the game is |
@@ -476,11 +514,11 @@ with st.expander("ℹ️ How does this work?"):
     | **Metacritic score** | Critical reception |
     | **Achievements** | A signal of game depth and engagement |
     | **DLC count** | Games with more DLC tend to discount the base game more |
-    | **Genre** | Action, RPG, Casual, and Early Access games show different patterns |
+    | **Genre** | Action, Indie, Casual, and Early Access games show different patterns |
     
     ### Model performance
-    The model predicts Summer Sale discounts with a **mean absolute error of ~10%** 
-    and explains around **61% of the variation** in discount depth across games (R² = 0.611).
+    The model predicts Summer Sale discounts with a **mean absolute error of ~8%** 
+    and explains around **67% of the variation** in discount depth across games (R² = 0.671).
     
     **What does that actually mean?**
     
@@ -489,15 +527,15 @@ with st.expander("ℹ️ How does this work?"):
     history of every Steam sale ever, the game's review scores, its publisher's track 
     record, and how old the game is. They'd do much better.
     
-    That's what this model does — it's learned patterns from 5,065 games and their 
+    That's what this model does — it's learned patterns from 12,617 games and their 
     real Summer Sale history.
     
-    - **Mean absolute error of ~10%** means that on average, if the model predicts 
-    a 60% discount, the real discount typically falls somewhere between 50–70%. 
+    - **Mean absolute error of ~8%** means that on average, if the model predicts 
+    a 60% discount, the real discount typically falls somewhere between 52–68%. 
     Not perfect, but a useful ballpark.
     
-    - **R² of 0.611** means the model can explain about 61% of why discounts vary 
-    between games using the features above. The remaining 39% comes down to things 
+    - **R² of 0.671** means the model can explain about 67% of why discounts vary 
+    between games using the features above. The remaining 33% comes down to things 
     we can't measure — publisher business decisions, marketing budgets, internal 
     Valve negotiations, and plain randomness.
     
@@ -515,5 +553,10 @@ with st.expander("ℹ️ How does this work?"):
     - Games releasing after the model's training data was collected
     - Whether Valve runs a Summer Sale in a given year (though they have every year since 2010)
     - Flash sales or publisher-specific promotions outside the Summer Sale window
+    
+    ### Built by
+    This project was built as part of the **GCI 2026 Summer course** at the 
+    University of Tokyo's Matsuo & Iwasawa Lab, combining data from the 
+    Steam Web API and IsThereAnyDeal API.
     """)
 
