@@ -575,7 +575,6 @@ with st.expander("ℹ️ How does this work?"):
     This project was built as a side project. I'm a student at the 
     University of Tokyo's Matsuo & Iwasawa Lab, and this was built as way of finding new ML techniques. It combinines data from the 
     Steam Web API and IsThereAnyDeal API.
-
     Check my Github if you are interested: https://github.com/est1985a/steam-summer-sale-predictor
     """)
 
